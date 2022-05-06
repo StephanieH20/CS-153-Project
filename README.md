@@ -2,7 +2,7 @@
 Spying on grasshoppers
 
 The dataset and videos were too large, so they need to be added into the same folder as the rest of the files.
-This incudes data_recording.mat and the sequence frames.
+This incudes data_recording.mat and the video clips.
 
 First, run locust.precop.m to obtain frame data for sequences 1-6 (corresponding to 133 videos 225, 650, 750, 850, 950, and 115). I only got the data for 133 videos since we decided the 96 and 146 videos could be excluded from the data and I had some trouble handling the other videos.
 

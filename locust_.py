@@ -5,11 +5,34 @@ import matplotlib.pyplot as plt
 from math import atan2, cos, sin, sqrt, pi
 from scipy.io import loadmat
 import random
+import os
 
-cap = cv2.VideoCapture('video_clips/preprocessed_133_10sec_710.avi')
-#cap = cv2.VideoCapture('video_clips/preprocessed_133_10sec_1910.avi')
+seq = -1
+while seq < 0 or seq == 8 or seq > 9:
+    seq = int(input("What sequence? "))
+    if seq < 0 or seq == 8 or seq > 9:
+        print("Invalid sequence")
 
-data = loadmat('sequence_7/frame_1.mat')
+data = loadmat('sequence_' + str(seq) + '/frame_1.mat')
+
+frms = 250
+if seq != 7 and seq != 9:
+    frms = 1500
+
+vidArr = [
+'video_clips/preprocessed_133_1min_225.avi', 
+'video_clips/preprocessed_133_1min_650.avi', 
+'video_clips/preprocessed_133_1min_750.avi', 
+'video_clips/preprocessed_133_1min_850.avi', 
+'video_clips/preprocessed_133_1min_950.avi', 
+'video_clips/preprocessed_133_1min_1115.avi', 
+'video_clips/preprocessed_133_10sec_710.avi',
+nan,
+'video_clips/preprocessed_133_10sec_1910.avi', 
+]
+
+cap = cv2.VideoCapture(vidArr[seq - 1])
+
 #data = loadmat('sequence_9/frame_1.mat')
 
 featarray = data['featarray']
@@ -18,6 +41,30 @@ angles = [-1] * 500
 
 width = int(cap.get(3))
 height = int(cap.get(4))
+
+scales = [
+(width/100, height/56.25), 
+(width/100, height/56.25), 
+(width/100, height/56.25), 
+(width/100, height/56.25), 
+(width/100, height/56.25), 
+(width/100, height/56.25), 
+(width/100, height/56.25), 
+nan,
+(width/100, height/56.25),
+]
+
+translations = [
+(0, 0),
+(0, 0), 
+(0, 0), 
+(0, 0), 
+(0, 0), 
+(0, 0), 
+(0, 0), 
+nan,
+(0, 0)
+]
 
 pts = []
 
@@ -74,7 +121,6 @@ def comp_angles(a1, a2):
     er = (abs(a1 - a2) * 100) % (200 * pi)
     acc = 1 - (min(er, (200 * pi) - er)/(100 * pi))
     return acc
-    # return (cos(a1 - a2)/2) + 0.5
 
 def comp_orientations(a1, a2):
     return max(comp_angles(a1, a2), comp_angles(a1 + pi, a2))
@@ -100,36 +146,56 @@ def getOrientation(pts, img, n_x, n_y):
     return (cntr, angle, calc_angle)
 
 ct = 1
-curr_pos = [[] for i in range(500)]
+curr_pos = [[] for i in range(2000)]
 test_t = 0
-while(ct < 250):
-    data_f = loadmat('sequence_7/frame_' + str(ct) + '.mat')
+min_x = 10000
+min_y = 10000
+max_x = 0
+max_y = 0
+
+while ct <= frms:
+    data_f = loadmat('sequence_' + str(seq) + '/frame_' + str(ct) + '.mat')
     #data_f = loadmat('sequence_9/frame_' + str(ct) + '.mat')
     featarray_f = data_f['featarray']
     ct = ct + 1
-    for i in range(0, 500):
+    for i in range(0, 2000):
         curr_pos[i].append((nan, nan))
     for i in range(0, len(featarray_f)):
-        x_p = featarray_f[i][0]*width/100
-        y_p = featarray_f[i][1]*height/56.25
+        x_p = featarray_f[i][0]*scales[seq-1][0]
+        y_p = featarray_f[i][1]*scales[seq-1][1]
         I_D = int(featarray_f[i][9])
-        curr_pos[I_D].pop()
+        if len(curr_pos[I_D]) > 0:
+            curr_pos[I_D].pop()
         curr_pos[I_D].append((x_p, y_p))
 
+direcName = "seq_" + str(seq) + "_results"
+
+if not os.path.isdir(direcName):
+    os.mkdir(direcName)
 
 count = 1
 
-while count < 248:
+while count < frms:
+    x_scale = scales[seq-1][0]
+    y_scale = scales[seq-1][1]
+    x_translation = translations[seq-1][0]
+    y_translation = translations[seq-1][1]
     accuracy = 0
     o_accuracy = 0
     locs = 0
 
-    ret, frame = cap.read()  
-    curr = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    compName = os.path.join(direcName, "frame_" + str(count) + ".txt") 
+    fil = open(compName, "w")
 
-    count = count + 1
+    if count == 1:
+        frame = frm
+
+    else:
+        ret, frame = cap.read()  
+        
+    curr = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     
-    data = loadmat('sequence_7/frame_' + str(count) + '.mat')
+    data = loadmat('sequence_' + str(seq) + '/frame_' + str(count) + '.mat')
     #data = loadmat('sequence_9/frame_' + str(count) + '.mat')
     
     featarray = data['featarray']
@@ -145,7 +211,7 @@ while count < 248:
 
     for i in range(0, len(contours)):
         c_length = cv2.arcLength(contours[i], True)
-        if c_length > 20:
+        if c_length > 0:
             hull = cv2.convexHull(contours[i])
             hulls.append(hull)
             rect = cv2.minAreaRect(contours[i])
@@ -158,11 +224,24 @@ while count < 248:
             boxes.append(box)
 
     for j in range(0, len(featarray)):
-        px, py = int(featarray[j][0]*width/100), int(featarray[j][1]*height/56.25)
+        
+        #cv2.circle(frame, (int(featarray[j][0]-x_translation), int(featarray[j][1]-y_translation)), 5, (0, 255, 0), 2)
+        
+        px, py = int((featarray[j][0]-x_translation)*x_scale), int((featarray[j][1]-y_translation)*y_scale)
+        #cv2.circle(frame, (px, py), 5, (0, 255, 0), 2)
+        max_x = max(featarray[j][0], max_x)
+        max_y = max(featarray[j][1], max_y)
+        min_x = min(featarray[j][0], min_x)
+        min_y = min(featarray[j][1], min_y)
+        #print(max_x, max_y)
+        #print(min_x, min_y)
+
+        #print(max_x-min_x, max_y-min_y)
+        
         for k in range(0, len(hulls)):
-            if cv2.pointPolygonTest(boxes[k], (int(featarray[j][0]*width/100), int(featarray[j][1]*height/56.25)), True) >= 0:
+            if cv2.pointPolygonTest(boxes[k], (int(featarray[j][0]*x_scale), int(featarray[j][1]*y_scale)), True) >= 0:
                 eyeDee = int(featarray[j][9])
-                curr_x, curr_y = int(featarray[j][0]*width/100), int(featarray[j][1]*height/56.25)
+                curr_x, curr_y = int(featarray[j][0]*x_scale), int(featarray[j][1]*y_scale)
                 next_x, next_y = curr_pos[eyeDee][count]
 
                 if np.isnan(next_x):
@@ -173,7 +252,12 @@ while count < 248:
 
                 (center, angle, calc_angle) = getOrientation(hulls[k], frame, next_x, next_y)
                 cv2.circle(frame, center, 10, (0, 255, 0), 2)
+
+                #print(str(eyeDee) + ": " + "(" + str(center[0]/x_scale) + ", " + str(center[1]/y_scale) + ")  " + str(calc_angle))
                 
+                fil.write(str(eyeDee) + ": " + "(" + str(center[0]/x_scale) + ", " + str(center[1]/y_scale) + ")  " + str(calc_angle) + "\n")
+
+
                 if not np.isnan(actual_angle):
                     comp_a = comp_angles(calc_angle, actual_angle)
                     comp_o = comp_orientations(calc_angle, actual_angle)
@@ -204,11 +288,16 @@ while count < 248:
                     
                 continue
 
-    accuracy = accuracy/locs
-    accuracies.append(accuracy)
+    if locs > 0:
+        accuracy = accuracy/locs
+        accuracies.append(accuracy)
 
-    o_accuracy = o_accuracy/locs
-    o_accuracies.append(o_accuracy)
+        o_accuracy = o_accuracy/locs
+        o_accuracies.append(o_accuracy)
+
+    #print(str(count) + "------------------------")
+    count = count + 1
+    
 
     cv2.imshow('Frame', frame)
 

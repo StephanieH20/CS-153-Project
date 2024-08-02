@@ -1,5 +1,3 @@
-
-https://github.com/user-attachments/assets/51b80acb-0527-4778-9af9-7c1c41758ab7
 # CS-153-Project
 Spying on grasshoppers
 
@@ -12,4 +10,4 @@ Once that's complete, run locust_.py, the main script that generates the augment
 
 After the script runs, .txt files will be generated containing the ID's of locusts present in each frame, their centers, and their calculated angles. Additionally, a window should appear showing a graph of the error over time. The script also prints out the net orientation and net axis errors. 
 
-Uploading BugTracking.mov…
+https://github.com/user-attachments/assets/d35bd908-d8e5-44ff-956c-90256ea06a69

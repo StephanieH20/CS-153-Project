@@ -1,6 +1,8 @@
 # CS-153-Project
 Spying on grasshoppers
 
+https://github.com/user-attachments/assets/d35bd908-d8e5-44ff-956c-90256ea06a69
+
 The dataset and videos were too large, so they need to be added into the same folder as the rest of the files.
 This includes data_recording.mat and the video clips. Add the videos to a folder and name it "video_clips"
 
@@ -9,5 +11,3 @@ First, run locust.precop.m to obtain frame data for sequences 1-6 (corresponding
 Once that's complete, run locust_.py, the main script that generates the augmented video along with the results. The script will ask you which sequence you want to run the algorithm on (sequences 1-7, and 9). Once you select, wait for around a minute (depending on which sequence you chose), then the video should pop-up with the augmented orientations. 
 
 After the script runs, .txt files will be generated containing the ID's of locusts present in each frame, their centers, and their calculated angles. Additionally, a window should appear showing a graph of the error over time. The script also prints out the net orientation and net axis errors. 
-
-https://github.com/user-attachments/assets/d35bd908-d8e5-44ff-956c-90256ea06a69
